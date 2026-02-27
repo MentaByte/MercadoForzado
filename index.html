@@ -635,12 +635,25 @@
 
   </footer>
 
-  <!-- SERVICE WORKER -->
+  <!-- SERVICE WORKER + PWA -->
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
-        .then(() => console.log('✅ SW registrado'))
-        .catch(err => console.log('❌ SW error:', err));
+      navigator.serviceWorker.register('/sw.js').then(reg => {
+        console.log('✅ SW registrado');
+        /* Detecta si hay una actualización disponible */
+        reg.addEventListener('updatefound', () => {
+          const newSW = reg.installing;
+          newSW.addEventListener('statechange', () => {
+            if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+              /* Hay nueva versión — notifica al usuario */
+              if (confirm('📲 Nueva versión disponible. ¿Actualizar ahora?')) {
+                newSW.postMessage({ type: 'SKIP_WAITING' });
+                location.reload();
+              }
+            }
+          });
+        });
+      }).catch(err => console.log('❌ SW error:', err));
     }
   </script>
 
@@ -774,6 +787,16 @@
     applyAddress(loadConfig());
 
     /* ================================================
+       REFERENCIAS A ELEMENTOS DEL DOM
+       (declaradas aquí para que todo el script las use)
+    =============================================== */
+    const bellBtn         = document.getElementById('bell-btn');
+    const settingsPanel   = document.getElementById('settings-panel');
+    const settingsOverlay = document.getElementById('settings-overlay');
+    const settingsClose   = document.getElementById('settings-close');
+    const bellBadge       = document.getElementById('bell-badge');
+
+    /* ================================================
        BADGE — muestra el número cuando hay config
        personalizada (distinta del default)
     =============================================== */
@@ -835,12 +858,6 @@
     /* ================================================
        PANEL — abrir / cerrar
     =============================================== */
-    const bellBtn         = document.getElementById('bell-btn');
-    const settingsPanel   = document.getElementById('settings-panel');
-    const settingsOverlay = document.getElementById('settings-overlay');
-    const settingsClose   = document.getElementById('settings-close');
-    const bellBadge       = document.getElementById('bell-badge');
-
     function openSettings() {
       populatePanel(loadConfig());
       settingsPanel.classList.add('open');
