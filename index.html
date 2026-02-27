@@ -224,6 +224,26 @@
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+    /* Botón para subir foto */
+    .file-upload-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 10px 12px;
+      background: #f0f6ff;
+      border: 1.5px dashed #3483fa;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #3483fa;
+      font-weight: 600;
+      cursor: pointer;
+      justify-content: center;
+      transition: background 0.15s;
+      box-sizing: border-box;
+    }
+    .file-upload-btn:hover { background: #ddeeff; }
+
     /* Toggle */
     .settings-item {
       display: flex;
@@ -392,7 +412,7 @@
         <span class="bell-badge" id="bell-badge">2</span>
       </button>
     </div>
-    <div class="location">Carrera 93d #06-30 ></div>
+    <div class="location" id="header-location">Cra. 11a #93A - 22, Bogotá ›</div>
   </header>
 
   <!-- OVERLAY -->
@@ -417,7 +437,24 @@
       <!-- TAB 1: PRODUCTO — lo que se ve arriba del fold en fenix.html -->
       <div class="tab-pane active" id="tab-producto">
         <div class="field-group">
-          <label>URL de la portada</label>
+          <label>📍 Dirección (aparece en el header)</label>
+          <input type="text" id="cfg-address" placeholder="Cra. 11a #93A - 22, Bogotá">
+        </div>
+        <div class="field-group">
+          <label>🖼️ Portada — desde el teléfono</label>
+          <!-- Input file: abre la galería/cámara del celular -->
+          <label class="file-upload-btn" for="cfg-img-file">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Elegir foto del teléfono
+          </label>
+          <input type="file" id="cfg-img-file" accept="image/*" style="display:none">
+          <div id="img-preview-wrap" style="display:none;margin-top:8px;text-align:center">
+            <img id="img-preview" style="max-width:100%;max-height:160px;border-radius:6px;border:1px solid #ddd;object-fit:contain">
+            <div style="font-size:11px;color:#00a650;margin-top:4px">✅ Imagen lista para guardar</div>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>O pega una URL de imagen</label>
           <input type="url" id="cfg-img" placeholder="https://...imagen.webp">
         </div>
         <div class="field-group">
@@ -565,16 +602,10 @@
       <span>Favoritos</span>
     </div>
 
-    <!-- Carrito: elevado con círculo y badge numérico -->
+    <!-- Carrito: elevado con círculo y badge numérico — mismo icono que fenix.html -->
     <div class="footer-item cart-item" id="footer-carrito">
       <div class="cart-circle">
         <svg viewBox="0 0 24 24">
-          <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-          <line x1="3" y1="6" x2="21" y2="6"/>
-          <!-- carrito de compras más realista -->
-        </svg>
-        <!-- carrito outline preciso -->
-        <svg viewBox="0 0 24 24" style="position:absolute;margin:auto;">
           <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
           <circle cx="10" cy="20.5" r="1.5" fill="#3483fa" stroke="#3483fa"/>
           <circle cx="17.5" cy="20.5" r="1.5" fill="#3483fa" stroke="#3483fa"/>
@@ -688,7 +719,7 @@
        Se sincroniza a través de localStorage
     =============================================== */
     const DEFAULT_CONFIG = {
-      img:          'https://raw.githubusercontent.com/MentaByte/Forzaje-ML/refs/heads/main/portadas/HarryPotter.webp',
+      img:          'https://i.imgur.com/wOQPR2Y.png',
       title:        'Harry Potter Y La Orden Del Fénix (Harry Potter 5), J. K. Rowling — Tapa Dura — En Español, 2020',
       price:        '$ 79.000',
       installments: '6 cuotas de $ 13.167 con 0% interés',
@@ -703,6 +734,7 @@
       seller:       'LIBRERIA ESTUDIO16',
       rating:       '5',
       sold:         '+50 vendidos',
+      address:      'Cra. 11a #93A - 22, Bogotá',
     };
 
     function loadConfig() {
@@ -715,6 +747,7 @@
       localStorage.setItem('fenix_config', JSON.stringify(cfg));
     }
     function populatePanel(cfg) {
+      document.getElementById('cfg-address').value      = cfg.address || DEFAULT_CONFIG.address;
       document.getElementById('cfg-img').value          = cfg.img;
       document.getElementById('cfg-title').value        = cfg.title;
       document.getElementById('cfg-price').value        = cfg.price;
@@ -731,6 +764,63 @@
       document.getElementById('cfg-rating').value       = cfg.rating;
       document.getElementById('cfg-sold').value         = cfg.sold;
     }
+
+    /** Actualiza la dirección visible en el header */
+    function applyAddress(cfg) {
+      document.getElementById('header-location').textContent = (cfg.address || DEFAULT_CONFIG.address) + ' ›';
+    }
+
+    /* Aplica la dirección al cargar */
+    applyAddress(loadConfig());
+
+    /* ================================================
+       BADGE — muestra el número cuando hay config
+       personalizada (distinta del default)
+    =============================================== */
+    function updateBadge() {
+      const raw = localStorage.getItem('fenix_config');
+      if (!raw) {
+        bellBadge.style.display = 'none';
+        return;
+      }
+      try {
+        const saved = JSON.parse(raw);
+        // Cuenta cuántos campos difieren del default
+        const changed = Object.keys(DEFAULT_CONFIG).filter(k => saved[k] && saved[k] !== DEFAULT_CONFIG[k]).length;
+        if (changed > 0) {
+          bellBadge.textContent = changed > 9 ? '9+' : changed;
+          bellBadge.style.display = 'flex';
+        } else {
+          bellBadge.style.display = 'none';
+        }
+      } catch {
+        bellBadge.style.display = 'none';
+      }
+    }
+
+    /* Evalúa badge al cargar la página */
+    updateBadge();
+
+    /* ================================================
+       FOTO DESDE EL TELÉFONO — FileReader → base64
+    =============================================== */
+    let pendingImgData = null; // guarda el base64 hasta que el usuario guarde
+
+    document.getElementById('cfg-img-file').addEventListener('change', function () {
+      const file = this.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        pendingImgData = e.target.result; // base64 data URL
+        const preview = document.getElementById('img-preview');
+        const wrap    = document.getElementById('img-preview-wrap');
+        preview.src   = pendingImgData;
+        wrap.style.display = 'block';
+        // Limpia el campo de URL para que no haya conflicto
+        document.getElementById('cfg-img').value = '';
+      };
+      reader.readAsDataURL(file);
+    });
 
     /* ================================================
        TOAST
@@ -755,11 +845,12 @@
       populatePanel(loadConfig());
       settingsPanel.classList.add('open');
       settingsOverlay.classList.add('open');
-      bellBadge.style.display = 'none';
     }
     function closeSettings() {
       settingsPanel.classList.remove('open');
       settingsOverlay.classList.remove('open');
+      // Re-evalúa el badge al cerrar (puede haber cambiado)
+      updateBadge();
     }
     bellBtn.addEventListener('click', openSettings);
     settingsClose.addEventListener('click', closeSettings);
@@ -775,17 +866,24 @@
       });
     });
 
-    /* GUARDAR — Producto */
+    /* GUARDAR — Producto (incluye dirección e imagen del teléfono) */
     document.getElementById('btn-save-producto').addEventListener('click', () => {
       const cfg = loadConfig();
       const v = id => document.getElementById(id).value.trim();
-      if (v('cfg-img'))          cfg.img          = v('cfg-img');
+      // Dirección
+      if (v('cfg-address'))      cfg.address      = v('cfg-address');
+      // Imagen: prioriza la foto del teléfono (base64) sobre la URL
+      if (pendingImgData)        { cfg.img = pendingImgData; pendingImgData = null; document.getElementById('img-preview-wrap').style.display = 'none'; }
+      else if (v('cfg-img'))     cfg.img = v('cfg-img');
+      // Resto de campos
       if (v('cfg-title'))        cfg.title        = v('cfg-title');
       if (v('cfg-price'))        cfg.price        = v('cfg-price');
       if (v('cfg-installments')) cfg.installments = v('cfg-installments');
       if (v('cfg-shipping'))     cfg.shipping     = v('cfg-shipping');
       if (v('cfg-stock'))        cfg.stock        = v('cfg-stock');
       saveConfig(cfg);
+      applyAddress(cfg);
+      updateBadge();
       showToast('✅ Producto actualizado — se verá en fenix.html');
     });
 
@@ -803,14 +901,20 @@
       cfg.rating           = document.getElementById('cfg-rating').value;
       if (v('cfg-sold'))   cfg.sold   = v('cfg-sold');
       saveConfig(cfg);
+      updateBadge();
       showToast('✅ Detalles actualizados');
     });
 
     /* RESET */
     document.getElementById('btn-reset').addEventListener('click', () => {
+
       if (confirm('¿Resetear toda la configuración al estado original?')) {
         localStorage.removeItem('fenix_config');
+        pendingImgData = null;
+        document.getElementById('img-preview-wrap').style.display = 'none';
         populatePanel(DEFAULT_CONFIG);
+        applyAddress(DEFAULT_CONFIG);
+        updateBadge();
         showToast('🔄 Config reseteada al original');
       }
     });

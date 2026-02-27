@@ -355,7 +355,7 @@
         <polyline points="15 18 9 12 15 6"/>
       </svg>
     </button>
-    <span class="ml-location">Carrera 93d #06-30</span>
+    <span class="ml-location" id="header-location">Cra. 11a #93A - 22, Bogotá</span>
     <div class="ml-search">
       <input type="search" placeholder="Buscar en Mercado Libre" aria-label="Buscar">
     </div>
@@ -378,7 +378,7 @@
         <!-- Portada dinámica -->
         <div class="cover-wrap">
           <img id="el-img"
-            src="https://raw.githubusercontent.com/MentaByte/Forzaje-ML/refs/heads/main/portadas/HarryPotter.webp"
+            src="https://i.imgur.com/wOQPR2Y.png"
             alt="Portada del producto">
         </div>
       </div>
@@ -509,7 +509,7 @@
        Escrita por el panel de configuración en index.html
     ============================================ */
     const DEFAULT = {
-      img:          'https://raw.githubusercontent.com/MentaByte/Forzaje-ML/refs/heads/main/portadas/HarryPotter.webp',
+      img:          'https://i.imgur.com/wOQPR2Y.png',
       title:        'Harry Potter Y La Orden Del Fénix (Harry Potter 5), J. K. Rowling — Tapa Dura — En Español, 2020',
       price:        '$ 79.000',
       installments: '6 cuotas de $ 13.167 con 0% interés',
@@ -524,6 +524,7 @@
       seller:       'LIBRERIA ESTUDIO16',
       rating:       '5',
       sold:         '+50 vendidos',
+      address:      'Cra. 11a #93A - 22, Bogotá',
     };
 
     function loadConfig() {
@@ -573,6 +574,10 @@
       const sellerName = cfg.seller || 'Vendedor';
       document.getElementById('el-seller-name').textContent   = sellerName;
       document.getElementById('el-seller-avatar').textContent = sellerName.charAt(0).toUpperCase();
+
+      // Dirección en el header
+      const loc = document.getElementById('header-location');
+      if (loc) loc.textContent = cfg.address || DEFAULT.address;
 
       // Título de la pestaña del navegador
       document.title = cfg.title.substring(0, 60) + ' — MercadoLibre';
