@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Producto • MercadoLibre</title>
+  <style>
+    /* ========================================
+       RESET Y BASE
+    ======================================== */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #f5f5f5;
+      color: #111;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      line-height: 1.4;
+    }
+
+    /* ========================================
+       HEADER — estilo MercadoLibre
+    ======================================== */
+    .ml-header {
+      background: #ffe600;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    /* Botón volver — SVG flecha */
+    .ml-back {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+    }
+    .ml-back svg {
+      width: 22px; height: 22px;
+      fill: none;
+      stroke: #333;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .ml-location {
+      font-weight: 700;
+      font-size: 13px;
+      color: #333;
+      white-space: nowrap;
+    }
+    .ml-search {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border-radius: 24px;
+      padding: 8px 14px;
+      box-shadow: 0 1px 0 rgba(0,0,0,.06);
+    }
+    .ml-search input {
+      border: 0; outline: none;
+      font-size: 14px; width: 100%;
+    }
+
+    /* ========================================
+       CONTENEDOR PRINCIPAL
+    ======================================== */
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0;
+    }
+
+    /* ========================================
+       SECCIÓN SUPERIOR (imagen + info compra)
+    ======================================== */
+    .product-top {
+      background: #fff;
+      margin-bottom: 8px;
+    }
+
+    /* Badges — estado + rating */
+    .badges {
+      padding: 14px 16px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: #666;
+    }
+    .badge-sold { color: #666; }
+    .rating { color: #f4c150; letter-spacing: 1px; }
+
+    /* Título */
+    .product-title {
+      font-size: 16px;
+      font-weight: 400;
+      color: #222;
+      padding: 8px 16px 12px;
+      line-height: 1.45;
+    }
+
+    /* Portada del libro */
+    .cover-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      border-top: 1px solid #f0f0f0;
+      border-bottom: 1px solid #f0f0f0;
+      background: #fafafa;
+    }
+    .cover-wrap img {
+      max-width: 260px;
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* ========================================
+       CARD DE COMPRA
+    ======================================== */
+    .buy-card {
+      background: #fff;
+      padding: 18px 16px;
+      margin-bottom: 8px;
+    }
+    .price-main {
+      font-size: 30px;
+      font-weight: 700;
+      color: #111;
+      margin-bottom: 4px;
+    }
+    .price-installments {
+      color: #0f9d58;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+    .payment-link {
+      font-size: 13px;
+      color: #2b7cff;
+      cursor: pointer;
+      display: block;
+      margin-bottom: 14px;
+      text-decoration: none;
+    }
+    .shipping-free {
+      font-size: 14px;
+      color: #00a650;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .shipping-detail {
+      font-size: 13px;
+      color: #2b7cff;
+      cursor: pointer;
+      margin-bottom: 14px;
+      display: block;
+      text-decoration: none;
+    }
+    .stock-info {
+      font-size: 13px;
+      color: #444;
+      margin-bottom: 6px;
+    }
+    .qty-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .qty-label { font-size: 13px; color: #444; }
+    .qty-select {
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* Botones de compra */
+    .btn-buy {
+      display: block;
+      width: 100%;
+      padding: 13px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      margin-bottom: 10px;
+      border: none;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn-buy:active { transform: scale(0.98); opacity: 0.9; }
+    .btn-primary { background: #3483fa; color: #fff; }
+    .btn-ghost   { background: transparent; border: 1.5px solid #3483fa !important; color: #3483fa; }
+
+    /* ========================================
+       FICHA TÉCNICA DEL PRODUCTO
+    ======================================== */
+    .product-info {
+      background: #fff;
+      padding: 18px 16px;
+      margin-bottom: 8px;
+    }
+    .product-info h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      color: #111;
+    }
+    .spec-list {
+      list-style: none;
+      padding: 0;
+    }
+    .spec-list li {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 14px;
+    }
+    .spec-list li:last-child { border-bottom: none; }
+    .spec-label { color: #888; }
+    .spec-value { color: #222; font-weight: 500; text-align: right; }
+
+    /* ========================================
+       BLOQUE VENDEDOR
+    ======================================== */
+    .seller-block {
+      background: #fff;
+      padding: 16px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .seller-avatar {
+      width: 42px; height: 42px;
+      background: #3483fa;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 16px;
+      flex-shrink: 0;
+    }
+    .seller-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111;
+    }
+    .seller-meta {
+      font-size: 12px;
+      color: #00a650;
+      margin-top: 2px;
+    }
+
+    /* ========================================
+       OTRAS OPCIONES
+    ======================================== */
+    .other-options {
+      background: #fff;
+      padding: 14px 16px;
+      margin-bottom: 80px;
+      font-size: 13px;
+      color: #666;
+    }
+    .other-options a { color: #2b7cff; text-decoration: none; }
+
+    /* ========================================
+       FOOTER NAV (igual que index.html)
+    ======================================== */
+    .footer {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: #fff;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-around;
+      align-items: stretch;
+      z-index: 100;
+      height: 56px;
+    }
+    .footer-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: #777;
+      cursor: pointer;
+      gap: 3px;
+      padding: 6px 0;
+      position: relative;
+    }
+    .footer-item svg {
+      width: 24px; height: 24px;
+      fill: none; stroke: #777;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .footer-item.active { color: #3483fa; }
+    .footer-item.active svg { stroke: #3483fa; }
+    .footer-item.active::after {
+      content: '';
+      position: absolute; top: 0; left: 20%; right: 20%;
+      height: 2px; background: #3483fa;
+    }
+    .footer-item.cart-item { margin-top: -14px; }
+    .cart-circle {
+      width: 52px; height: 52px;
+      background: #fff;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.07);
+    }
+    .cart-circle svg { width: 27px; height: 27px; }
+    .cart-badge {
+      position: absolute; top: 3px; right: 3px;
+      background: #3483fa; color: #fff;
+      font-size: 9px; font-weight: 700;
+      border-radius: 50%; width: 15px; height: 15px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Responsive */
+    @media (min-width: 640px) {
+      .product-top {
+        display: grid;
+        grid-template-columns: 1fr 360px;
+        gap: 0;
+        align-items: start;
+      }
+      .cover-wrap { border-right: 1px solid #f0f0f0; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="ml-header">
+    <button class="ml-back" id="back-btn" aria-label="Volver">
+      <svg viewBox="0 0 24 24">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </button>
+    <span class="ml-location">Carrera 93d #06-30</span>
+    <div class="ml-search">
+      <input type="search" placeholder="Buscar en Mercado Libre" aria-label="Buscar">
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- SECCIÓN SUPERIOR: título + imagen -->
+    <div class="product-top">
+      <div>
+        <!-- Badges: vendidos + rating -->
+        <div class="badges">
+          <span class="badge-sold" id="el-sold">Nuevo | +50 vendidos</span>
+          <span class="rating" id="el-rating">★★★★★</span>
+        </div>
+        <!-- Título dinámico -->
+        <h1 class="product-title" id="el-title">
+          Harry Potter Y La Orden Del Fénix (Harry Potter 5), J. K. Rowling — Tapa Dura — En Español, 2020
+        </h1>
+        <!-- Portada dinámica -->
+        <div class="cover-wrap">
+          <img id="el-img"
+            src="https://raw.githubusercontent.com/MentaByte/Forzaje-ML/refs/heads/main/portadas/HarryPotter.webp"
+            alt="Portada del producto">
+        </div>
+      </div>
+
+      <!-- Card de compra -->
+      <div class="buy-card">
+        <div class="price-main" id="el-price">$ 79.000</div>
+        <div class="price-installments" id="el-installments">6 cuotas de $ 13.167 con 0% interés</div>
+        <a class="payment-link" href="#">Ver los medios de pago</a>
+
+        <div class="shipping-free" id="el-shipping">Llega gratis mañana</div>
+        <a class="shipping-detail" href="#">Más detalles y formas de entrega</a>
+
+        <div class="stock-info">Retira gratis a partir del miércoles</div>
+        <div class="stock-info" id="el-stock">Stock disponible</div>
+
+        <div class="qty-row">
+          <span class="qty-label">Cantidad:</span>
+          <select class="qty-select" aria-label="Cantidad">
+            <option>1 unidad</option>
+            <option>2 unidades</option>
+            <option>3 unidades</option>
+          </select>
+        </div>
+
+        <button class="btn-buy btn-primary">Comprar ahora</button>
+        <button class="btn-buy btn-ghost">Agregar al carrito</button>
+      </div>
+    </div>
+
+    <!-- FICHA TÉCNICA -->
+    <div class="product-info">
+      <h3>Lo que tienes que saber de este producto</h3>
+      <ul class="spec-list">
+        <li>
+          <span class="spec-label">Año de publicación</span>
+          <span class="spec-value" id="el-year">2020</span>
+        </li>
+        <li>
+          <span class="spec-label">Tapa del libro</span>
+          <span class="spec-value" id="el-cover">Dura</span>
+        </li>
+        <li>
+          <span class="spec-label">Género</span>
+          <span class="spec-value" id="el-genre">Infantil</span>
+        </li>
+        <li>
+          <span class="spec-label">Edad mínima recomendada</span>
+          <span class="spec-value" id="el-age">9 años</span>
+        </li>
+        <li>
+          <span class="spec-label">Número de páginas</span>
+          <span class="spec-value" id="el-pages">928</span>
+        </li>
+        <li>
+          <span class="spec-label">ISBN</span>
+          <span class="spec-value" id="el-isbn">9786073193931</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- VENDEDOR -->
+    <div class="seller-block">
+      <div class="seller-avatar" id="el-seller-avatar">L</div>
+      <div>
+        <div class="seller-name" id="el-seller-name">LIBRERIA ESTUDIO16</div>
+        <div class="seller-meta">MercadoLíder &nbsp;•&nbsp; +1000 ventas</div>
+      </div>
+    </div>
+
+    <!-- OTRAS OPCIONES -->
+    <div class="other-options">
+      Otras opciones de compra &nbsp;•&nbsp;
+      <a href="#">Ver 3 opciones desde <span id="el-price-other">$ 79.000</span></a>
+    </div>
+
+  </main>
+
+  <!-- FOOTER — mismo estilo vectorial que index.html -->
+  <footer class="footer">
+    <div class="footer-item" onclick="history.back()">
+      <svg viewBox="0 0 24 24">
+        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-4v-6H8v6H4a1 1 0 0 1-1-1V9.5z"/>
+      </svg>
+      <span>Inicio</span>
+    </div>
+    <div class="footer-item">
+      <svg viewBox="0 0 24 24">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+      </svg>
+      <span>Favoritos</span>
+    </div>
+    <div class="footer-item cart-item active">
+      <div class="cart-circle">
+        <svg viewBox="0 0 24 24">
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+          <circle cx="10" cy="20.5" r="1.5" fill="#3483fa" stroke="#3483fa"/>
+          <circle cx="17.5" cy="20.5" r="1.5" fill="#3483fa" stroke="#3483fa"/>
+        </svg>
+        <span class="cart-badge">1</span>
+      </div>
+      <span style="margin-top:2px">Carrito</span>
+    </div>
+    <div class="footer-item">
+      <svg viewBox="0 0 24 24">
+        <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+      </svg>
+      <span>Clips</span>
+    </div>
+    <div class="footer-item">
+      <svg viewBox="0 0 24 24">
+        <line x1="3" y1="6"  x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+      <span>Más</span>
+    </div>
+  </footer>
+
+  <script>
+    /* ============================================
+       BOTÓN VOLVER
+    ============================================ */
+    document.getElementById('back-btn').addEventListener('click', () => history.back());
+
+    /* ============================================
+       CARGA DE CONFIG DESDE localStorage
+       Escrita por el panel de configuración en index.html
+    ============================================ */
+    const DEFAULT = {
+      img:          'https://raw.githubusercontent.com/MentaByte/Forzaje-ML/refs/heads/main/portadas/HarryPotter.webp',
+      title:        'Harry Potter Y La Orden Del Fénix (Harry Potter 5), J. K. Rowling — Tapa Dura — En Español, 2020',
+      price:        '$ 79.000',
+      installments: '6 cuotas de $ 13.167 con 0% interés',
+      shipping:     'Llega gratis mañana',
+      stock:        'Stock disponible • 4 disponibles',
+      year:         '2020',
+      cover:        'Dura',
+      genre:        'Infantil',
+      age:          '9 años',
+      pages:        '928',
+      isbn:         '9786073193931',
+      seller:       'LIBRERIA ESTUDIO16',
+      rating:       '5',
+      sold:         '+50 vendidos',
+    };
+
+    function loadConfig() {
+      try {
+        const raw = localStorage.getItem('fenix_config');
+        return raw ? { ...DEFAULT, ...JSON.parse(raw) } : { ...DEFAULT };
+      } catch { return { ...DEFAULT }; }
+    }
+
+    /** Genera las estrellas según la valoración (1–5) */
+    function starsHTML(n) {
+      const filled = '★'.repeat(n);
+      const empty  = '☆'.repeat(5 - n);
+      return filled + empty;
+    }
+
+    /** Aplica la config a todos los elementos dinámicos de la página */
+    function applyConfig(cfg) {
+      // Portada
+      const img = document.getElementById('el-img');
+      img.src = cfg.img;
+      img.alt = cfg.title;
+
+      // Texts principales
+      document.getElementById('el-title').textContent        = cfg.title;
+      document.getElementById('el-price').textContent        = cfg.price;
+      document.getElementById('el-price-other').textContent  = cfg.price;
+      document.getElementById('el-installments').textContent = cfg.installments;
+      document.getElementById('el-shipping').textContent     = cfg.shipping;
+      document.getElementById('el-stock').textContent        = cfg.stock;
+
+      // Rating (estrellas generadas por JS)
+      document.getElementById('el-rating').textContent = starsHTML(parseInt(cfg.rating) || 5);
+
+      // Sold
+      document.getElementById('el-sold').textContent = `Nuevo | ${cfg.sold}`;
+
+      // Ficha técnica
+      document.getElementById('el-year').textContent  = cfg.year;
+      document.getElementById('el-cover').textContent = cfg.cover;
+      document.getElementById('el-genre').textContent = cfg.genre;
+      document.getElementById('el-age').textContent   = cfg.age;
+      document.getElementById('el-pages').textContent = cfg.pages;
+      document.getElementById('el-isbn').textContent  = cfg.isbn;
+
+      // Vendedor: avatar = primera letra del nombre
+      const sellerName = cfg.seller || 'Vendedor';
+      document.getElementById('el-seller-name').textContent   = sellerName;
+      document.getElementById('el-seller-avatar').textContent = sellerName.charAt(0).toUpperCase();
+
+      // Título de la pestaña del navegador
+      document.title = cfg.title.substring(0, 60) + ' — MercadoLibre';
+    }
+
+    /* Aplica la config al cargar la página */
+    applyConfig(loadConfig());
+
+    /* También se re-aplica si la config cambia desde otra pestaña */
+    window.addEventListener('storage', e => {
+      if (e.key === 'fenix_config') applyConfig(loadConfig());
+    });
+  </script>
+
+</body>
+</html>

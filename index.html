@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MercadoLibre - Libros</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    /* ========================================
+       RESET Y BASE
+    ======================================== */
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #fff;
+      padding-bottom: 70px;
+    }
+
+    /* ========================================
+       HEADER
+    ======================================== */
+    header {
+      background: #fff159;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .search-bar {
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border-radius: 5px;
+      padding: 6px 10px;
+      flex: 1;
+    }
+    .search-bar input {
+      border: none;
+      flex: 1;
+      font-size: 14px;
+      outline: none;
+    }
+
+    /* ========================================
+       CAMPANITA
+    ======================================== */
+    .bell-btn {
+      position: relative;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .bell-btn svg {
+      width: 26px;
+      height: 26px;
+      fill: #333;
+    }
+    .bell-badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      background: #f04d23;
+      color: #fff;
+      font-size: 10px;
+      font-weight: bold;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .location {
+      font-size: 12px;
+      margin-top: 5px;
+      color: #333;
+    }
+
+    /* ========================================
+       OVERLAY + PANEL DE CONFIGURACIÓN
+    ======================================== */
+    .settings-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 200;
+    }
+    .settings-overlay.open { display: block; }
+
+    .settings-panel {
+      position: fixed;
+      top: 0;
+      right: -340px;
+      width: 320px;
+      height: 100%;
+      background: #fff;
+      z-index: 201;
+      transition: right 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .settings-panel.open { right: 0; }
+
+    .settings-header {
+      background: #fff159;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+    .settings-close {
+      background: none;
+      border: none;
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    /* Tabs */
+    .settings-tabs {
+      display: flex;
+      border-bottom: 2px solid #f0f0f0;
+      flex-shrink: 0;
+    }
+    .settings-tab {
+      flex: 1;
+      padding: 10px 4px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: #888;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .settings-tab.active {
+      color: #3483fa;
+      border-bottom-color: #3483fa;
+    }
+
+    .settings-body {
+      padding: 16px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    .field-group { margin-bottom: 14px; }
+    .field-group label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 5px;
+    }
+    .field-group input,
+    .field-group textarea,
+    .field-group select {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: Arial, sans-serif;
+    }
+    .field-group input:focus,
+    .field-group textarea:focus { border-color: #3483fa; }
+    .field-group textarea { resize: vertical; min-height: 72px; }
+
+    .btn-save {
+      width: 100%;
+      padding: 12px;
+      background: #3483fa;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s;
+    }
+    .btn-save:hover { background: #2968d0; }
+    .btn-save:active { transform: scale(0.98); }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #222;
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: 20px;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      z-index: 300;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Toggle */
+    .settings-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 13px;
+      color: #333;
+    }
+    .settings-item:last-child { border-bottom: none; }
+    .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0;
+      background: #ccc; border-radius: 24px; cursor: pointer; transition: background 0.2s;
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute;
+      width: 18px; height: 18px; left: 3px; top: 3px;
+      background: #fff; border-radius: 50%; transition: transform 0.2s;
+    }
+    .toggle input:checked + .toggle-slider { background: #3483fa; }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+    /* ========================================
+       FILTROS
+    ======================================== */
+    .filters {
+      display: flex;
+      overflow-x: auto;
+      border-bottom: 1px solid #ddd;
+      padding: 8px;
+      background: #fff;
+      scrollbar-width: none;
+    }
+    .filters::-webkit-scrollbar { display: none; }
+    .filters div {
+      margin-right: 12px;
+      font-size: 13px;
+      color: #555;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    /* ========================================
+       GRID DE PRODUCTOS
+    ======================================== */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      padding: 6px;
+      background: #f5f5f5;
+    }
+    .product {
+      background: #fff;
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      transition: box-shadow 0.15s;
+    }
+    .product:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+    .product img { width: 100%; height: 242px; object-fit: cover; background: #f9f9f9; }
+    .info { padding: 8px; }
+    .title { font-size: 13px; color: #333; height: 36px; overflow: hidden; }
+    .price { font-size: 16px; font-weight: bold; margin: 4px 0; color: #000; }
+    .installments { font-size: 12px; color: #555; }
+
+    /* Spinner */
+    #load-more-trigger {
+      text-align: center; padding: 20px; color: #888; font-size: 14px; background: #f5f5f5;
+    }
+    .spinner {
+      display: inline-block; width: 22px; height: 22px;
+      border: 3px solid #ddd; border-top-color: #3483fa;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+      vertical-align: middle; margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ========================================
+       FOOTER NAV — SVG vectoriales
+    ======================================== */
+    .footer {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: #fff;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-around;
+      align-items: stretch;
+      z-index: 100;
+      height: 56px;
+    }
+    .footer-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: #777;
+      cursor: pointer;
+      gap: 3px;
+      padding: 6px 0;
+      transition: color 0.15s;
+      position: relative;
+    }
+    /* icono SVG base — sin fill, solo stroke */
+    .footer-item svg {
+      width: 24px; height: 24px;
+      fill: none;
+      stroke: #777;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .footer-item.active { color: #3483fa; }
+    .footer-item.active svg { stroke: #3483fa; }
+
+    /* Carrito: elevado con círculo */
+    .footer-item.cart-item { margin-top: -14px; }
+    .cart-circle {
+      width: 52px; height: 52px;
+      background: #fff;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.07);
+    }
+    .cart-circle svg { width: 27px; height: 27px; }
+    .cart-badge {
+      position: absolute; top: 3px; right: 3px;
+      background: #3483fa; color: #fff;
+      font-size: 9px; font-weight: 700;
+      border-radius: 50%; width: 15px; height: 15px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    /* línea azul activa en la parte superior */
+    .footer-item.active::after {
+      content: '';
+      position: absolute; top: 0; left: 20%; right: 20%;
+      height: 2px; background: #3483fa;
+      border-radius: 0 0 2px 2px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-top">
+      <div class="search-bar">
+        <input type="text" placeholder="libros">
+      </div>
+      <!-- Campanita — abre panel de configuración del producto destino -->
+      <button class="bell-btn" id="bell-btn" aria-label="Configuración">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6V11c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+        </svg>
+        <span class="bell-badge" id="bell-badge">2</span>
+      </button>
+    </div>
+    <div class="location">Carrera 93d #06-30 ></div>
+  </header>
+
+  <!-- OVERLAY -->
+  <div class="settings-overlay" id="settings-overlay"></div>
+
+  <!-- PANEL DE CONFIGURACIÓN -->
+  <div class="settings-panel" id="settings-panel">
+    <div class="settings-header">
+      ⚙️ Configurar producto destino
+      <button class="settings-close" id="settings-close">✕</button>
+    </div>
+
+    <!-- Tabs: Producto / Detalles / App -->
+    <div class="settings-tabs">
+      <div class="settings-tab active" data-tab="tab-producto">📦 Producto</div>
+      <div class="settings-tab" data-tab="tab-detalles">📋 Detalles</div>
+      <div class="settings-tab" data-tab="tab-app">📱 App</div>
+    </div>
+
+    <div class="settings-body">
+
+      <!-- TAB 1: PRODUCTO — lo que se ve arriba del fold en fenix.html -->
+      <div class="tab-pane active" id="tab-producto">
+        <div class="field-group">
+          <label>URL de la portada</label>
+          <input type="url" id="cfg-img" placeholder="https://...imagen.webp">
+        </div>
+        <div class="field-group">
+          <label>Título completo del producto</label>
+          <textarea id="cfg-title" rows="3" placeholder="Nombre del libro, autor, edición..."></textarea>
+        </div>
+        <div class="field-group">
+          <label>Precio</label>
+          <input type="text" id="cfg-price" placeholder="$ 79.000">
+        </div>
+        <div class="field-group">
+          <label>Cuotas</label>
+          <input type="text" id="cfg-installments" placeholder="6 cuotas de $ 13.167 con 0% interés">
+        </div>
+        <div class="field-group">
+          <label>Mensaje de envío</label>
+          <input type="text" id="cfg-shipping" placeholder="Llega gratis mañana">
+        </div>
+        <div class="field-group">
+          <label>Disponibilidad / Stock</label>
+          <input type="text" id="cfg-stock" placeholder="Stock disponible • 4 disponibles">
+        </div>
+        <button class="btn-save" id="btn-save-producto">💾 Guardar producto</button>
+      </div>
+
+      <!-- TAB 2: DETALLES — ficha técnica del libro -->
+      <div class="tab-pane" id="tab-detalles">
+        <div class="field-group">
+          <label>Año de publicación</label>
+          <input type="text" id="cfg-year" placeholder="2020">
+        </div>
+        <div class="field-group">
+          <label>Tipo de tapa</label>
+          <select id="cfg-cover">
+            <option value="Dura">Dura</option>
+            <option value="Blanda">Blanda</option>
+            <option value="Flexible">Flexible</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Género literario</label>
+          <input type="text" id="cfg-genre" placeholder="Infantil / Ficción / Autoayuda">
+        </div>
+        <div class="field-group">
+          <label>Edad mínima recomendada</label>
+          <input type="text" id="cfg-age" placeholder="9 años">
+        </div>
+        <div class="field-group">
+          <label>Número de páginas</label>
+          <input type="number" id="cfg-pages" placeholder="928">
+        </div>
+        <div class="field-group">
+          <label>ISBN</label>
+          <input type="text" id="cfg-isbn" placeholder="9786073193931">
+        </div>
+        <div class="field-group">
+          <label>Nombre del vendedor</label>
+          <input type="text" id="cfg-seller" placeholder="LIBRERIA ESTUDIO16">
+        </div>
+        <div class="field-group">
+          <label>Valoración (estrellas 1–5)</label>
+          <select id="cfg-rating">
+            <option value="1">★☆☆☆☆ — 1</option>
+            <option value="2">★★☆☆☆ — 2</option>
+            <option value="3">★★★☆☆ — 3</option>
+            <option value="4">★★★★☆ — 4</option>
+            <option value="5" selected>★★★★★ — 5</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Unidades vendidas</label>
+          <input type="text" id="cfg-sold" placeholder="+50 vendidos">
+        </div>
+        <button class="btn-save" id="btn-save-detalles">💾 Guardar detalles</button>
+      </div>
+
+      <!-- TAB 3: APP — opciones de comportamiento -->
+      <div class="tab-pane" id="tab-app">
+        <div class="settings-item">
+          <span>Mostrar cuotas en el listado</span>
+          <label class="toggle">
+            <input type="checkbox" checked id="toggle-installments">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="settings-item">
+          <span>Scroll infinito activo</span>
+          <label class="toggle">
+            <input type="checkbox" checked id="toggle-infinite-scroll">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="settings-item">
+          <span>Click en libro → ir a fenix.html</span>
+          <label class="toggle">
+            <input type="checkbox" checked id="toggle-redirect">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div style="margin-top:20px">
+          <button class="btn-save" id="btn-reset" style="background:#e53935;">🗑️ Resetear toda la config</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast de confirmación -->
+  <div class="toast" id="toast">✅ Cambios guardados</div>
+
+  <!-- FILTROS -->
+  <div class="filters">
+    <div>Género del libro</div>
+    <div>Idioma</div>
+    <div>Autor</div>
+    <div>Filtros (1)</div>
+  </div>
+
+  <!-- GRID (se llena dinámicamente por JS) -->
+  <div class="grid" id="product-grid"></div>
+  <div id="load-more-trigger">
+    <span class="spinner"></span> Cargando más libros...
+  </div>
+
+  <!-- ==========================================
+       FOOTER — iconos vectoriales SVG
+       Basado en la imagen de referencia:
+       Casa / Corazón / Carrito elevado / Rayo / Hamburger
+  =========================================== -->
+  <footer class="footer">
+
+    <!-- Inicio: casa con puerta -->
+    <div class="footer-item active" id="footer-inicio">
+      <svg viewBox="0 0 24 24">
+        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-4v-6H8v6H4a1 1 0 0 1-1-1V9.5z"/>
+      </svg>
+      <span>Inicio</span>
+    </div>
+
+    <!-- Favoritos: corazón outline -->
+    <div class="footer-item" id="footer-favoritos">
+      <svg viewBox="0 0 24 24">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+      </svg>
+      <span>Favoritos</span>
+    </div>
+
+    <!-- Carrito: elevado con círculo y badge numérico -->
+    <div class="footer-item cart-item" id="footer-carrito">
+      <div class="cart-circle">
+        <svg viewBox="0 0 24 24">
+          <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <!-- carrito de compras más realista -->
+        </svg>
+        <!-- carrito outline preciso -->
+        <svg viewBox="0 0 24 24" style="position:absolute;margin:auto;">
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+          <circle cx="10" cy="20.5" r="1.5" fill="#3483fa" stroke="#3483fa"/>
+          <circle cx="17.5" cy="20.5" r="1.5" fill="#3483fa" stroke="#3483fa"/>
+        </svg>
+        <span class="cart-badge">1</span>
+      </div>
+      <span style="margin-top:2px">Carrito</span>
+    </div>
+
+    <!-- Clips: rayo / bolt -->
+    <div class="footer-item" id="footer-clips">
+      <svg viewBox="0 0 24 24">
+        <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+      </svg>
+      <span>Clips</span>
+    </div>
+
+    <!-- Más: tres líneas horizontales -->
+    <div class="footer-item" id="footer-mas">
+      <svg viewBox="0 0 24 24">
+        <line x1="3" y1="6"  x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+      <span>Más</span>
+    </div>
+
+  </footer>
+
+  <!-- SERVICE WORKER -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then(() => console.log('✅ SW registrado'))
+        .catch(err => console.log('❌ SW error:', err));
+    }
+  </script>
+
+  <script>
+    /* ================================================
+       CATÁLOGO DE 55 LIBROS — fuente del scroll infinito
+    =============================================== */
+    const BOOKS = [
+      {img:'portadas/1.webp',  title:'Confiar E Inspirar / Stephen M R Covey',              price:'$ 62.000',  inst:'36x $ 1.722'},
+      {img:'portadas/2.webp',  title:'Como Salir Del Pozo / Andrés Oppenheimer',             price:'$ 61.536',  inst:'36x $ 1.709'},
+      {img:'portadas/3.webp',  title:'En Agosto Nos Vemos',                                   price:'$ 59.900',  inst:'36x $ 1.664'},
+      {img:'portadas/4.webp',  title:'1984 / George Orwell',                                  price:'$ 38.358',  inst:'36x $ 1.066'},
+      {img:'portadas/5.webp',  title:'Cómo Ganar Amigos / Dale Carnegie',                    price:'$ 59.900',  inst:'36x $ 1.664'},
+      {img:'portadas/6.webp',  title:'Biblia Cristiana Reina Valera',                         price:'$ 90.000',  inst:'36x $ 2.500'},
+      {img:'portadas/7.webp',  title:'Pack Harry Potter 7 Tomos',                             price:'$ 331.550', inst:'36x $ 9.210'},
+      {img:'portadas/8.webp',  title:'Piense Y Hágase Rico / Napoleon Hill',                 price:'$ 35.000',  inst:'36x $ 972'},
+      {img:'portadas/9.webp',  title:'La Batalla Cultural',                                   price:'$ 78.000',  inst:'36x $ 2.167'},
+      {img:'portadas/10.webp', title:'Satanás / Mario Mendoza',                               price:'$ 49.000',  inst:'36x $ 1.361'},
+      {img:'portadas/11.webp', title:'Meditaciones — Marco Aurelio',                          price:'$ 23.500',  inst:'36x $ 1.100'},
+      {img:'portadas/12.webp', title:'Hábitos Atómicos — James Clear',                        price:'$ 24.253',  inst:'36x $ 674'},
+      {img:'portadas/13.webp', title:'Cómo Hacer Que Te Pasen Cosas Buenas — Marian Rojas',  price:'$ 49.800',  inst:'36x $ 1.383'},
+      {img:'portadas/14.webp', title:'Biblia Reina Valera 1960 Flexible (mediana)',           price:'$ 51.800',  inst:'36x $ 1.439'},
+      {img:'portadas/15.webp', title:'Deja De Ser Tu — Joe Dispenza',                         price:'$ 63.000',  inst:'36x $ 1.750'},
+      {img:'portadas/16.webp', title:'El Poder Del Ahora — Eckhart Tolle',                    price:'$ 48.000',  inst:'36x $ 1.333'},
+      {img:'portadas/17.webp', title:'El Alquimista — Paulo Coelho',                          price:'$ 42.000',  inst:'36x $ 1.167'},
+      {img:'portadas/18.webp', title:'Padre Rico Padre Pobre — Robert Kiyosaki',              price:'$ 55.000',  inst:'36x $ 1.528'},
+      {img:'portadas/19.webp', title:'El Secreto — Rhonda Byrne',                             price:'$ 44.000',  inst:'36x $ 1.222'},
+      {img:'portadas/20.webp', title:'Los Cuatro Acuerdos — Miguel Ruiz',                     price:'$ 38.000',  inst:'36x $ 1.056'},
+      {img:'portadas/21.webp', title:'Inteligencia Emocional — Daniel Goleman',               price:'$ 52.000',  inst:'36x $ 1.444'},
+      {img:'portadas/22.webp', title:'El Mundo De Sofía — Jostein Gaarder',                   price:'$ 46.000',  inst:'36x $ 1.278'},
+      {img:'portadas/23.webp', title:'Don Quijote De La Mancha',                              price:'$ 65.000',  inst:'36x $ 1.806'},
+      {img:'portadas/24.webp', title:'Cien Años De Soledad — García Márquez',                 price:'$ 58.000',  inst:'36x $ 1.611'},
+      {img:'portadas/25.webp', title:'El Principito — Antoine de Saint-Exupéry',              price:'$ 28.000',  inst:'36x $ 778'},
+      {img:'portadas/26.webp', title:'Orgullo Y Prejuicio — Jane Austen',                     price:'$ 35.000',  inst:'36x $ 972'},
+      {img:'portadas/27.webp', title:'Crimen Y Castigo — Dostoievski',                        price:'$ 42.000',  inst:'36x $ 1.167'},
+      {img:'portadas/28.webp', title:'El Principito Nueva Edición-pocket',                    price:'$ 24.000',  inst:'36x $ 667'},
+      {img:'portadas/29.webp', title:'Libro Mandalas Colores Del Universo',                   price:'$ 23.000',  inst:'36x $ 639'},
+      {img:'portadas/30.webp', title:'Cómo Ser Un Estoico — Massimo Pigliucci',               price:'$ 56.000',  inst:'36x $ 1.556'},
+      {img:'portadas/31.webp', title:'Mini-netter Atlas De Anatomía Humana 8ª Ed.',           price:'$ 149.000', inst:'36x $ 4.139'},
+      {img:'portadas/32.webp', title:'30 Jugadores De Fútbol Que Hicieron Historia',          price:'$ 55.000',  inst:'36x $ 1.528'},
+      {img:'portadas/33.webp', title:'Los Impostores Del Espacio: Yolo Aventuras 3',          price:'$ 40.981',  inst:'36x $ 1.138'},
+      {img:'portadas/34.webp', title:'1984 — George Orwell',                                  price:'$ 38.358',  inst:'36x $ 1.065'},
+      {img:'portadas/35.webp', title:'Este Dolor No Es Mío',                                  price:'$ 24.890',  inst:'36x $ 691'},
+      {img:'portadas/36.webp', title:'El Arte De La Guerra — Sun Tzu',                        price:'$ 21.000',  inst:'36x $ 583'},
+      {img:'portadas/37.webp', title:'Un Inmueble Al Año No Hace Daño — Carlos Devis',       price:'$ 46.500',  inst:'36x $ 1.292'},
+      {img:'portadas/38.webp', title:'Incendiario: 40 Días Para Consumir Tu Apatía',         price:'$ 64.821',  inst:'36x $ 1.800'},
+      {img:'portadas/39.webp', title:'Cartilla Nacho Lee',                                    price:'$ 8.949',   inst:'36x $ 249'},
+      {img:'portadas/40.webp', title:'Cómo Ganar Amigos E Influir Sobre Las Personas',       price:'$ 46.000',  inst:'36x $ 1.278'},
+      {img:'portadas/41.webp', title:'Alas De Sangre: Empíreo 1 — Rebecca Yarros',           price:'$ 77.000',  inst:'36x $ 2.139'},
+      {img:'portadas/42.webp', title:'Cómo Ganar Amigos E Influir Sobre Las Personas',       price:'$ 23.000',  inst:'36x $ 639'},
+      {img:'portadas/43.webp', title:'Rompe La Barrera Del No',                               price:'$ 52.000',  inst:'36x $ 1.444'},
+      {img:'portadas/44.webp', title:'Código Nacional De Tránsito 2021 Actualizado',          price:'$ 20.000',  inst:'36x $ 556'},
+      {img:'portadas/45.webp', title:'Agenda Diosa Amor Propio 2024 — Antonia Canal',         price:'$ 45.000',  inst:'36x $ 1.250'},
+      {img:'portadas/46.webp', title:'Un Curso De Milagros',                                  price:'$ 76.000',  inst:'36x $ 2.111'},
+      {img:'portadas/47.webp', title:'Biblia Infantil Reina Valera 1960 Para Niñas',          price:'$ 66.000',  inst:'36x $ 1.833'},
+      {img:'portadas/48.webp', title:'Estuche Marian Rojas: Encuentra Tu Persona Vitamina',  price:'$ 97.000',  inst:'36x $ 2.694'},
+      {img:'portadas/49.webp', title:'Biblia Reina Valera 1960 Tamaño Manual Letra Grande',   price:'$ 64.991',  inst:'36x $ 1.805'},
+      {img:'portadas/50.webp', title:'El Poder De La Mente Subconsciente — Joseph Murphy',   price:'$ 24.000',  inst:'36x $ 667'},
+      {img:'portadas/51.webp', title:'Álgebra De Baldor',                                     price:'$ 78.000',  inst:'36x $ 2.167'},
+      {img:'portadas/52.webp', title:'Yolo Aventuras El Misterio Del Amazonas',               price:'$ 49.000',  inst:'36x $ 1.361'},
+      {img:'portadas/53.webp', title:'Romper El Círculo',                                     price:'$ 52.800',  inst:'36x $ 1.467'},
+      {img:'portadas/54.webp', title:'Netter Cuaderno De Anatomía Para Colorear 3a Ed.',     price:'$ 83.000',  inst:'36x $ 2.306'},
+      {img:'portadas/55.webp', title:'Diccionario Escolar Larousse',                          price:'$ 28.000',  inst:'36x $ 778'},
+    ];
+
+    /* ================================================
+       ESTADO DE LA APP
+    =============================================== */
+    let isLoading        = false;
+    let showInstallments = true;
+    let infiniteScrollOn = true;
+    let redirectActive   = true;
+
+    /* ================================================
+       CONFIG POR DEFECTO DEL PRODUCTO (fenix.html)
+       Se sincroniza a través de localStorage
+    =============================================== */
+    const DEFAULT_CONFIG = {
+      img:          'https://raw.githubusercontent.com/MentaByte/Forzaje-ML/refs/heads/main/portadas/HarryPotter.webp',
+      title:        'Harry Potter Y La Orden Del Fénix (Harry Potter 5), J. K. Rowling — Tapa Dura — En Español, 2020',
+      price:        '$ 79.000',
+      installments: '6 cuotas de $ 13.167 con 0% interés',
+      shipping:     'Llega gratis mañana',
+      stock:        'Stock disponible • 4 disponibles',
+      year:         '2020',
+      cover:        'Dura',
+      genre:        'Infantil',
+      age:          '9 años',
+      pages:        '928',
+      isbn:         '9786073193931',
+      seller:       'LIBRERIA ESTUDIO16',
+      rating:       '5',
+      sold:         '+50 vendidos',
+    };
+
+    function loadConfig() {
+      try {
+        const raw = localStorage.getItem('fenix_config');
+        return raw ? { ...DEFAULT_CONFIG, ...JSON.parse(raw) } : { ...DEFAULT_CONFIG };
+      } catch { return { ...DEFAULT_CONFIG }; }
+    }
+    function saveConfig(cfg) {
+      localStorage.setItem('fenix_config', JSON.stringify(cfg));
+    }
+    function populatePanel(cfg) {
+      document.getElementById('cfg-img').value          = cfg.img;
+      document.getElementById('cfg-title').value        = cfg.title;
+      document.getElementById('cfg-price').value        = cfg.price;
+      document.getElementById('cfg-installments').value = cfg.installments;
+      document.getElementById('cfg-shipping').value     = cfg.shipping;
+      document.getElementById('cfg-stock').value        = cfg.stock;
+      document.getElementById('cfg-year').value         = cfg.year;
+      document.getElementById('cfg-cover').value        = cfg.cover;
+      document.getElementById('cfg-genre').value        = cfg.genre;
+      document.getElementById('cfg-age').value          = cfg.age;
+      document.getElementById('cfg-pages').value        = cfg.pages;
+      document.getElementById('cfg-isbn').value         = cfg.isbn;
+      document.getElementById('cfg-seller').value       = cfg.seller;
+      document.getElementById('cfg-rating').value       = cfg.rating;
+      document.getElementById('cfg-sold').value         = cfg.sold;
+    }
+
+    /* ================================================
+       TOAST
+    =============================================== */
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    /* ================================================
+       PANEL — abrir / cerrar
+    =============================================== */
+    const bellBtn         = document.getElementById('bell-btn');
+    const settingsPanel   = document.getElementById('settings-panel');
+    const settingsOverlay = document.getElementById('settings-overlay');
+    const settingsClose   = document.getElementById('settings-close');
+    const bellBadge       = document.getElementById('bell-badge');
+
+    function openSettings() {
+      populatePanel(loadConfig());
+      settingsPanel.classList.add('open');
+      settingsOverlay.classList.add('open');
+      bellBadge.style.display = 'none';
+    }
+    function closeSettings() {
+      settingsPanel.classList.remove('open');
+      settingsOverlay.classList.remove('open');
+    }
+    bellBtn.addEventListener('click', openSettings);
+    settingsClose.addEventListener('click', closeSettings);
+    settingsOverlay.addEventListener('click', closeSettings);
+
+    /* TABS */
+    document.querySelectorAll('.settings-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    /* GUARDAR — Producto */
+    document.getElementById('btn-save-producto').addEventListener('click', () => {
+      const cfg = loadConfig();
+      const v = id => document.getElementById(id).value.trim();
+      if (v('cfg-img'))          cfg.img          = v('cfg-img');
+      if (v('cfg-title'))        cfg.title        = v('cfg-title');
+      if (v('cfg-price'))        cfg.price        = v('cfg-price');
+      if (v('cfg-installments')) cfg.installments = v('cfg-installments');
+      if (v('cfg-shipping'))     cfg.shipping     = v('cfg-shipping');
+      if (v('cfg-stock'))        cfg.stock        = v('cfg-stock');
+      saveConfig(cfg);
+      showToast('✅ Producto actualizado — se verá en fenix.html');
+    });
+
+    /* GUARDAR — Detalles */
+    document.getElementById('btn-save-detalles').addEventListener('click', () => {
+      const cfg = loadConfig();
+      const v = id => document.getElementById(id).value.trim();
+      if (v('cfg-year'))   cfg.year   = v('cfg-year');
+      cfg.cover            = document.getElementById('cfg-cover').value;
+      if (v('cfg-genre'))  cfg.genre  = v('cfg-genre');
+      if (v('cfg-age'))    cfg.age    = v('cfg-age');
+      if (v('cfg-pages'))  cfg.pages  = v('cfg-pages');
+      if (v('cfg-isbn'))   cfg.isbn   = v('cfg-isbn');
+      if (v('cfg-seller')) cfg.seller = v('cfg-seller');
+      cfg.rating           = document.getElementById('cfg-rating').value;
+      if (v('cfg-sold'))   cfg.sold   = v('cfg-sold');
+      saveConfig(cfg);
+      showToast('✅ Detalles actualizados');
+    });
+
+    /* RESET */
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      if (confirm('¿Resetear toda la configuración al estado original?')) {
+        localStorage.removeItem('fenix_config');
+        populatePanel(DEFAULT_CONFIG);
+        showToast('🔄 Config reseteada al original');
+      }
+    });
+
+    /* TOGGLE — cuotas */
+    document.getElementById('toggle-installments').addEventListener('change', function () {
+      showInstallments = this.checked;
+      document.querySelectorAll('.installments').forEach(el => {
+        el.style.display = showInstallments ? '' : 'none';
+      });
+    });
+
+    /* TOGGLE — scroll infinito */
+    document.getElementById('toggle-infinite-scroll').addEventListener('change', function () {
+      infiniteScrollOn = this.checked;
+      document.getElementById('load-more-trigger').style.display = infiniteScrollOn ? '' : 'none';
+    });
+
+    /* TOGGLE — redirección */
+    document.getElementById('toggle-redirect').addEventListener('change', function () {
+      redirectActive = this.checked;
+    });
+
+    /* ================================================
+       FOOTER — cambio de tab activo
+    =============================================== */
+    ['inicio','favoritos','carrito','clips','mas'].forEach(id => {
+      const el = document.getElementById('footer-' + id);
+      if (el) el.addEventListener('click', () => {
+        document.querySelectorAll('.footer-item').forEach(f => f.classList.remove('active'));
+        el.classList.add('active');
+      });
+    });
+
+    /* ================================================
+       SCROLL INFINITO
+    =============================================== */
+    function getRandBooks(n) {
+      const out = [];
+      for (let i = 0; i < n; i++) out.push(BOOKS[Math.floor(Math.random() * BOOKS.length)]);
+      return out;
+    }
+
+    function createCard(book) {
+      const card = document.createElement('div');
+      card.className = 'product';
+      card.innerHTML = `
+        <img src="${book.img}" alt="${book.title}" loading="lazy">
+        <div class="info">
+          <div class="title">${book.title}</div>
+          <div class="price">${book.price}</div>
+          <div class="installments"${showInstallments ? '' : ' style="display:none"'}>${book.inst}</div>
+        </div>`;
+      card.addEventListener('click', () => {
+        if (redirectActive) window.location.href = 'fenix.html';
+      });
+      return card;
+    }
+
+    function loadMoreBooks(count = 10) {
+      if (isLoading || !infiniteScrollOn) return;
+      isLoading = true;
+      setTimeout(() => {
+        const grid = document.getElementById('product-grid');
+        getRandBooks(count).forEach(b => grid.appendChild(createCard(b)));
+        isLoading = false;
+      }, 250 + Math.random() * 300);
+    }
+
+    /* IntersectionObserver — dispara carga al acercarse al trigger */
+    const loadTrigger = document.getElementById('load-more-trigger');
+    new IntersectionObserver(
+      entries => { if (entries[0].isIntersecting) loadMoreBooks(10); },
+      { rootMargin: '200px' }
+    ).observe(loadTrigger);
+
+    /* Carga inicial */
+    loadMoreBooks(20);
+  </script>
+
+</body>
+</html>
