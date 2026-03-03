@@ -1,18 +1,19 @@
-<script type="module">
-  import { validateSession, clearSession } from "../auth.js";
-
-  const result = await validateSession();
-
-  if (!result.valid) {
-    clearSession();
-    window.location.replace("/");
-  }
-  // Si es válido, la app carga normalmente
-</script>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
+
+  <script type="module">
+    import { validateSession, clearSession } from "../auth.js";
+  
+    const result = await validateSession();
+  
+    if (!result.valid) {
+      clearSession();
+      window.location.replace("/");
+    }
+    // Si es válido, la app carga normalmente
+  </script>
+  
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MercadoForzado - Libros</title>
