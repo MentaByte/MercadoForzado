@@ -113,15 +113,17 @@ self.addEventListener('activate', event => {
   );
 });
 
-/* ------------------------------------------------
-   FETCH — estrategia Cache First
-   1. Busca en caché → si existe, lo sirve
-   2. Si no está en caché → va a la red y lo guarda
-   3. Si la red falla → muestra página offline
------------------------------------------------- */
 self.addEventListener('fetch', event => {
-  /* Solo intercepta peticiones GET */
   if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+  
+  // ← Agrega esto: Supabase siempre va a la red
+  if (url.hostname.includes('supabase.co')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
 
   /* No intercepta peticiones a otros dominios
      (excepto imgur que cacheamos si ya está guardado) */
