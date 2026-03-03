@@ -23,21 +23,39 @@ export async function activateLicense(code) {
   });
   return res.json();
 
-}
 export async function validateSession() {
   const session_token = localStorage.getItem("session_token");
   const device_id = getDeviceId();
-  if (!session_token) return { valid: false };
 
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/validate`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-    },
-    body: JSON.stringify({ session_token, device_id }),
-  });
-  return res.json();
+  if (!session_token) return { valid: false, error: "no_token" };
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/validate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ session_token, device_id }),
+    });
+    const result = await res.json();
+    
+    // Guarda el último estado conocido
+    if (result.valid === true) {
+      localStorage.setItem("last_known_status", "valid");
+    } else if (result.error === "revoked") {
+      localStorage.setItem("last_known_status", "revoked");
+    }
+    
+    return result;
+  } catch (e) {
+    // Sin internet — usa el último estado conocido
+    const lastStatus = localStorage.getItem("last_known_status");
+    if (lastStatus === "revoked") {
+      return { valid: false, error: "revoked" };
+    }
+    return { valid: false, no_internet: true }; // nunca fue revocado, deja pasar
+  }
 }
 
 export function saveSession(token) {
