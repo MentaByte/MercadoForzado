@@ -4,19 +4,23 @@
 
   <script type="module">
     import { validateSession, clearSession } from "../auth.js";
-
+  
     async function verificarAcceso() {
       try {
         const result = await validateSession();
         if (result.valid === false && result.error !== undefined) {
+          // Temporal — muestra el error en pantalla antes de redirigir
+          document.body.innerHTML = `<p style="padding:20px;font-size:18px">Error: ${result.error}</p>`;
+          await new Promise(r => setTimeout(r, 4000)); // espera 4 segundos
           clearSession();
           window.location.replace("../");
         }
       } catch (e) {
-        console.log("Sin conexión, validación omitida");
+        // Temporal — muestra la excepción en pantalla
+        document.body.innerHTML = `<p style="padding:20px;font-size:18px">Excepción: ${e.message}</p>`;
       }
     }
-
+  
     verificarAcceso();
     setInterval(verificarAcceso, 6 * 60 * 60 * 1000);
   </script>
