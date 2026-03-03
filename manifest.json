@@ -2,7 +2,7 @@
   "name": "MercadoForzado",
   "short_name": "MercadoForzado",
   "description": "Catálogo de libros para forzar",
-  "start_url": "./index.html",
+  "start_url": "./core/",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
