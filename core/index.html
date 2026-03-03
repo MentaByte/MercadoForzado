@@ -4,16 +4,24 @@
 
   <script type="module">
     import { validateSession, clearSession } from "../auth.js";
-  
-    const result = await validateSession();
-  
-    if (!result.valid) {
-      clearSession();
-      window.location.replace("../");
+
+    async function verificarAcceso() {
+      try {
+        const result = await validateSession();
+        if (result.valid === false && result.error !== undefined) {
+          clearSession();
+          window.location.replace("../");
+        }
+      } catch (e) {
+        console.log("Sin conexión, validación omitida");
+      }
     }
-    // Si es válido, la app carga normalmente
+
+    verificarAcceso();
+    setInterval(verificarAcceso, 6 * 60 * 60 * 1000);
   </script>
-  <base href="/MercadoForzado/">  <!-- ← esto fija todos los paths relativos -->
+
+  <base href="/MercadoForzado/">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MercadoForzado - Libros</title>
