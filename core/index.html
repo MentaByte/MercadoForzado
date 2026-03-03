@@ -1,3 +1,15 @@
+<script type="module">
+  import { validateSession, clearSession } from "../auth.js";
+
+  const result = await validateSession();
+
+  if (!result.valid) {
+    clearSession();
+    window.location.replace("/");
+  }
+  // Si es válido, la app carga normalmente
+</script>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
