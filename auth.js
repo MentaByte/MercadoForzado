@@ -1,4 +1,4 @@
-const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";
+const SUPABASE_URL = "https://zgatennqbagmyfbpiakr.supabase.co";
 
 // Genera o recupera el device_id del dispositivo
 export function getDeviceId() {
