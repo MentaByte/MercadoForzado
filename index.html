@@ -13,7 +13,7 @@
     if (result.session_token) {
       saveSession(result.session_token);
       // Redirigir a la app sin el código en la URL
-      window.location.replace("/core/");
+      window.location.replace("./core/");
     } else {
       // Mostrar mensaje según el error
       const mensajes = {
