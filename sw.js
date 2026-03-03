@@ -117,13 +117,20 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
-  
-  // ← Agrega esto: Supabase siempre va a la red
+
+  // Supabase siempre a la red
   if (url.hostname.includes('supabase.co')) {
     event.respondWith(fetch(event.request));
     return;
   }
 
+  // core/index.html y auth.js siempre a la red
+  if (url.pathname.includes('core/index.html') || url.pathname.includes('auth.js')) {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
+    );
+    return;
+  }
 
   /* No intercepta peticiones a otros dominios
      (excepto imgur que cacheamos si ya está guardado) */
