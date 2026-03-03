@@ -1,21 +1,14 @@
-/* ================================================
-   SERVICE WORKER — MercadoForzado
-   Estrategia: Cache First con fallback a red
-   =============================================== */
+javascriptconst CACHE_NAME = 'ml-libros-v3'; // ← subimos versión
 
-const CACHE_NAME = 'ml-libros-v2';
-
-/* Ruta base de la app — se calcula automáticamente
-   para que funcione en GitHub Pages o en cualquier subcarpeta */
 const BASE = self.location.pathname.replace(/sw\.js$/, '');
 
-/* Archivos que se cachean inmediatamente al instalar */
 const PRECACHE = [
   BASE,
   BASE + 'index.html',
+  BASE + 'auth.js',          // ← nuevo
+  BASE + 'core/index.html',  // ← tu app movida aquí
   BASE + 'fenix.html',
   BASE + 'manifest.json',
-  /* Portadas de los 55 libros */
   BASE + 'portadas/1.webp',
   BASE + 'portadas/2.webp',
   BASE + 'portadas/3.webp',
