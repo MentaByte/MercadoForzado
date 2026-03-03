@@ -2,33 +2,27 @@
 <html lang="es">
 <head>
 
-  <script type="module">
-    import { validateSession, clearSession } from "../auth.js";
-  
-    async function verificarAcceso() {
-      try {
-        const result = await validateSession();
-        if (result.valid === false && result.error !== undefined) {
-          clearSession();
-          window.location.replace("../");
-        }
-      } catch (e) {
-        console.log("Sin conexión, validación omitida");
+<script type="module">
+  console.log("SCRIPT CARGADO");
+  import { validateSession, clearSession } from "../auth.js";
+  console.log("AUTH IMPORTADO");
+
+  async function verificarAcceso() {
+    console.log("VERIFICANDO...");
+    try {
+      const result = await validateSession();
+      console.log("RESULTADO:", JSON.stringify(result));
+      if (result.valid === false && result.error !== undefined) {
+        clearSession();
+        window.location.replace("../");
       }
+    } catch (e) {
+      console.log("EXCEPCION:", e.message);
     }
-  
-    // Al abrir
-    verificarAcceso();
-  
-    // Cada 6 horas si la app está abierta
-    setInterval(verificarAcceso, 6 * 60 * 60 * 1000);
-  
-    // Cuando vuelve el internet
-    window.addEventListener('online', () => {
-      console.log("Conexión restaurada, validando...");
-      verificarAcceso();
-    });
-  </script>
+  }
+
+  verificarAcceso();
+</script>
 
   <base href="/MercadoForzado/">
   <meta charset="UTF-8">
