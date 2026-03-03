@@ -124,10 +124,14 @@ self.addEventListener('fetch', event => {
   const isImgur = url.hostname === 'i.imgur.com';
 
   // Supabase siempre a la red — nunca cachear
-  if (url.hostname.includes('supabase.co')) {
-    event.respondWith(fetch(event.request));
-    return;
-  }
+   // core y auth.js — network first
+   if (url.pathname.includes('core') || url.pathname.includes('auth.js')) {
+     event.respondWith(
+       fetch(event.request)
+         .catch(() => caches.match(BASE + 'core/index.html'))  // ← fuerza el match correcto
+     );
+     return;
+   }
 
   // core/index.html y auth.js — network first para que la validación siempre sea fresca
   if (url.pathname.includes('core/index.html') || url.pathname.includes('auth.js')) {
