@@ -1,4 +1,4 @@
-javascriptconst CACHE_NAME = 'ml-libros-v3'; // ← subimos versión
+javascriptconst CACHE_NAME = 'ml-libros-v4'; // ← subimos versión
 
 const BASE = self.location.pathname.replace(/sw\.js$/, '');
 
