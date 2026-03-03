@@ -15,21 +15,26 @@ export async function activateLicense(code) {
   const device_id = getDeviceId();
   const res = await fetch(`${SUPABASE_URL}/functions/v1/activate`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+    },
     body: JSON.stringify({ code, device_id }),
   });
   return res.json();
-}
 
+}
 export async function validateSession() {
   const session_token = localStorage.getItem("session_token");
   const device_id = getDeviceId();
-
   if (!session_token) return { valid: false };
 
   const res = await fetch(`${SUPABASE_URL}/functions/v1/validate`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+    },
     body: JSON.stringify({ session_token, device_id }),
   });
   return res.json();
