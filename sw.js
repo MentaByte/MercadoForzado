@@ -1,12 +1,17 @@
-javascriptconst CACHE_NAME = 'ml-libros-v4'; // ← subimos versión
+/* ================================================
+   SERVICE WORKER — MercadoForzado
+   Estrategia: Cache First con fallback a red
+   =============================================== */
+
+const CACHE_NAME = 'ml-libros-v4';
 
 const BASE = self.location.pathname.replace(/sw\.js$/, '');
 
 const PRECACHE = [
   BASE,
   BASE + 'index.html',
-  BASE + 'auth.js',          // ← nuevo
-  BASE + 'core/index.html',  // ← tu app movida aquí
+  BASE + 'auth.js',
+  BASE + 'core/index.html',
   BASE + 'fenix.html',
   BASE + 'manifest.json',
   BASE + 'portadas/1.webp',
@@ -67,14 +72,12 @@ const PRECACHE = [
 ];
 
 /* ------------------------------------------------
-   INSTALL — precachea todos los archivos esenciales
+   INSTALL
 ------------------------------------------------ */
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
       console.log('[SW] Precacheando archivos...');
-      /* Cachea cada archivo individualmente para que
-         un fallo en uno no rompa toda la instalación */
       return Promise.allSettled(
         PRECACHE.map(url =>
           cache.add(url).catch(err =>
@@ -84,15 +87,13 @@ self.addEventListener('install', event => {
       );
     }).then(() => {
       console.log('[SW] Instalación completa');
-      /* Activa el SW inmediatamente sin esperar a que
-         se cierren las pestañas abiertas */
       return self.skipWaiting();
     })
   );
 });
 
 /* ------------------------------------------------
-   ACTIVATE — limpia cachés viejas de versiones anteriores
+   ACTIVATE
 ------------------------------------------------ */
 self.addEventListener('activate', event => {
   event.waitUntil(
@@ -107,24 +108,28 @@ self.addEventListener('activate', event => {
       )
     ).then(() => {
       console.log('[SW] Activado y en control');
-      /* Toma control de todas las páginas abiertas */
       return self.clients.claim();
     })
   );
 });
 
+/* ------------------------------------------------
+   FETCH
+------------------------------------------------ */
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
+  const isLocal = url.origin === self.location.origin;
+  const isImgur = url.hostname === 'i.imgur.com';
 
-  // Supabase siempre a la red
+  // Supabase siempre a la red — nunca cachear
   if (url.hostname.includes('supabase.co')) {
     event.respondWith(fetch(event.request));
     return;
   }
 
-  // core/index.html y auth.js siempre a la red
+  // core/index.html y auth.js — network first para que la validación siempre sea fresca
   if (url.pathname.includes('core/index.html') || url.pathname.includes('auth.js')) {
     event.respondWith(
       fetch(event.request).catch(() => caches.match(event.request))
@@ -132,29 +137,19 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  /* No intercepta peticiones a otros dominios
-     (excepto imgur que cacheamos si ya está guardado) */
-  const url = new URL(event.request.url);
-  const isLocal   = url.origin === self.location.origin;
-  const isImgur   = url.hostname === 'i.imgur.com';
-
+  // No intercepta otros dominios (excepto imgur)
   if (!isLocal && !isImgur) return;
 
+  // El resto — cache first
   event.respondWith(
     caches.match(event.request).then(cached => {
-      if (cached) {
-        /* ✅ Encontrado en caché — respuesta instantánea */
-        return cached;
-      }
+      if (cached) return cached;
 
-      /* 🌐 No está en caché — busca en la red */
       return fetch(event.request).then(response => {
-        /* Solo cachea respuestas válidas */
         if (!response || response.status !== 200 || response.type === 'error') {
           return response;
         }
 
-        /* Guarda la respuesta en caché para futuros usos */
         const toCache = response.clone();
         caches.open(CACHE_NAME).then(cache => {
           cache.put(event.request, toCache);
@@ -162,8 +157,6 @@ self.addEventListener('fetch', event => {
 
         return response;
       }).catch(() => {
-        /* ❌ Sin red y sin caché */
-        /* Si es una página HTML, muestra página offline mínima */
         if (event.request.headers.get('accept')?.includes('text/html')) {
           return new Response(
             `<!DOCTYPE html>
@@ -195,7 +188,6 @@ self.addEventListener('fetch', event => {
           );
         }
 
-        /* Para imágenes sin caché y sin red, retorna respuesta vacía */
         return new Response('', { status: 503 });
       });
     })
@@ -203,9 +195,7 @@ self.addEventListener('fetch', event => {
 });
 
 /* ------------------------------------------------
-   MESSAGE — permite forzar actualización del SW
-   desde la app con: navigator.serviceWorker.controller
-   .postMessage({ type: 'SKIP_WAITING' })
+   MESSAGE
 ------------------------------------------------ */
 self.addEventListener('message', event => {
   if (event.data?.type === 'SKIP_WAITING') {
