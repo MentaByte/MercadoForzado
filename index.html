@@ -1,0 +1,27 @@
+<script type="module">
+  import { activateLicense, saveSession } from "./auth.js";
+
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("k");
+
+  if (!code) {
+    // No hay código — mostrar pantalla de error o simplemente nada
+    document.body.innerHTML = "<p>Acceso no válido.</p>";
+  } else {
+    const result = await activateLicense(code);
+
+    if (result.session_token) {
+      saveSession(result.session_token);
+      // Redirigir a la app sin el código en la URL
+      window.location.replace("/core/");
+    } else {
+      // Mostrar mensaje según el error
+      const mensajes = {
+        invalid_code: "El código no existe.",
+        revoked: "Este acceso fue revocado.",
+        device_mismatch: "Este código ya está activo en otro dispositivo.",
+      };
+      document.body.innerHTML = `<p>${mensajes[result.error] || "Error de acceso."}</p>`;
+    }
+  }
+</script>  
