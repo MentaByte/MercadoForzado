@@ -3,25 +3,19 @@
 <head>
 
 <script type="module">
-  console.log("SCRIPT CARGADO");
   import { validateSession, clearSession } from "../auth.js";
-  console.log("AUTH IMPORTADO");
 
   async function verificarAcceso() {
-    console.log("VERIFICANDO...");
-    try {
-      const result = await validateSession();
-      console.log("RESULTADO:", JSON.stringify(result));
-      if (result.valid === false && result.error !== undefined) {
-        clearSession();
-        window.location.replace("../");
-      }
-    } catch (e) {
-      console.log("EXCEPCION:", e.message);
+    const result = await validateSession();
+    if (result.valid === false && !result.no_internet) {
+      clearSession();
+      window.location.replace("../");
     }
   }
 
   verificarAcceso();
+  setInterval(verificarAcceso, 6 * 60 * 60 * 1000);
+  window.addEventListener('online', () => verificarAcceso());
 </script>
 
   <base href="/MercadoForzado/">
