@@ -60,8 +60,9 @@ export async function validateSession() {
 
 export function saveSession(token) {
   localStorage.setItem("session_token", token);
+  localStorage.setItem("last_known_status", "valid"); // ← agrega esto
 }
-
+  
 export function clearSession() {
   localStorage.removeItem("session_token");
 }
