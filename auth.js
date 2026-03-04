@@ -1,11 +1,21 @@
+/* ================================================
+   AUTENTICACIÓN - MercadoForzado
+   ✅ Versión 1.3 - Compatible Safari iOS
+   =============================================== */
+
 const SUPABASE_URL = "https://zgatennqbagmyfbpiakr.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpnYXRlbm5xYmFnbXlmYnBpYWtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEwMTg3NTEsImV4cCI6MjA4NjU5NDc1MX0.5c_IoL3_PM1zwFsuvblkoCoWbP9-4BSaMcIwSasLprw";
 
 // Genera o recupera el device_id del dispositivo
+// ✅ Compatible Safari iOS (no usa crypto.randomUUID)
 export function getDeviceId() {
   let id = localStorage.getItem("device_id");
   if (!id) {
-    id = crypto.randomUUID();
+    // Alternativa compatible con Safari iOS
+    id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
     localStorage.setItem("device_id", id);
   }
   return id;
