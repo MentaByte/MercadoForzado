@@ -2,8 +2,65 @@
 <html lang="es">
 <head>
 
-<script type="module">
-  import { validateSession, clearSession } from "../auth.js";
+<script>
+  /* ================================================
+     VALIDACIÓN DE SESIÓN - MercadoForzado
+     ✅ Compatible Safari iOS (sin módulos ES6)
+     =============================================== */
+  
+  // Constantes de Supabase
+  const SUPABASE_URL = "https://zgatennqbagmyfbpiakr.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpnYXRlbm5xYmFnbXlmYnBpYWtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEwMTg3NTEsImV4cCI6MjA4NjU5NDc1MX0.5c_IoL3_PM1zwFsuvblkoCoWbP9-4BSaMcIwSasLprw";
+
+  function getDeviceId() {
+    let id = localStorage.getItem("device_id");
+    if (!id) {
+      id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+      localStorage.setItem("device_id", id);
+    }
+    return id;
+  }
+
+  async function validateSession() {
+    const session_token = localStorage.getItem("session_token");
+    const device_id = getDeviceId();
+
+    if (!session_token) return { valid: false, error: "no_token" };
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/validate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ session_token, device_id }),
+      });
+      const result = await res.json();
+
+      if (result.valid === true) {
+        localStorage.setItem("last_known_status", "valid");
+      } else if (result.error === "revoked") {
+        localStorage.setItem("last_known_status", "revoked");
+      }
+
+      return result;
+    } catch (e) {
+      const lastStatus = localStorage.getItem("last_known_status");
+      if (lastStatus === "revoked") {
+        return { valid: false, error: "revoked" };
+      }
+      return { valid: false, no_internet: true };
+    }
+  }
+
+  function clearSession() {
+    localStorage.removeItem("session_token");
+    localStorage.removeItem("last_known_status");
+  }
 
   async function verificarAcceso() {
     const result = await validateSession();
@@ -17,6 +74,7 @@
   setInterval(verificarAcceso, 6 * 60 * 60 * 1000);
   window.addEventListener('online', () => verificarAcceso());
 </script>
+
 
   <base href="/MercadoForzado/">
   <meta charset="UTF-8">
