@@ -3,7 +3,7 @@
    Estrategia: Cache First con fallback a red
    =============================================== */
 
-const CACHE_NAME = 'ml-libros-v4.1';
+const CACHE_NAME = 'mf-libros-v4.2';
 
 const BASE = self.location.pathname.replace(/sw\.js$/, '');
 
