@@ -1045,9 +1045,17 @@
     /* ================================================
        SCROLL INFINITO
     =============================================== */
+    let lastBookIndex = -1;
     function getRandBooks(n) {
       const out = [];
-      for (let i = 0; i < n; i++) out.push(BOOKS[Math.floor(Math.random() * BOOKS.length)]);
+      let prevIdx = lastBookIndex;
+      for (let i = 0; i < n; i++) {
+        let idx;
+        do { idx = Math.floor(Math.random() * BOOKS.length); } while (idx === prevIdx);
+        out.push(BOOKS[idx]);
+        prevIdx = idx;
+      }
+      lastBookIndex = prevIdx;
       return out;
     }
 
