@@ -83,6 +83,30 @@
       margin-top: 20px;
       color: #3c3;
     }
+
+    .install-btn {
+      display: none;
+      width: 100%;
+      margin-top: 16px;
+      padding: 14px;
+      background: #3483fa;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .install-btn:active { transform: scale(0.98); }
+
+    .continue-link {
+      display: none;
+      margin-top: 14px;
+      font-size: 13px;
+      color: #3483fa;
+      text-decoration: underline;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -92,6 +116,8 @@
     <p>Por favor espera mientras validamos tu código de MercadoForzado.</p>
     <div class="loader"></div>
     <div id="message"></div>
+    <button class="install-btn" id="install-btn">📲 Instalar app</button>
+    <div class="continue-link" id="continue-link">Continuar sin instalar →</div>
   </div>
 
   <script>
@@ -101,7 +127,57 @@
        =============================================== */
     
     const messageEl = document.getElementById("message");
-    
+
+    // Registra el Service Worker aquí también, para que el navegador
+    // reconozca la página como instalable (manifest + SW activo).
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+
+    // Captura el prompt nativo de instalación (Chrome/Edge/Android)
+    let deferredInstallPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+    });
+
+    function isStandalone() {
+      return window.matchMedia('(display-mode: standalone)').matches ||
+             window.navigator.standalone === true;
+    }
+    function isIOS() {
+      return /iphone|ipad|ipod/i.test(navigator.userAgent);
+    }
+
+    // Muestra las opciones de instalación tras una activación exitosa.
+    // En iOS, Safari solo puede "Agregar a pantalla de inicio" desde la
+    // página que se está viendo en ese momento — por eso ahí no mostramos
+    // instrucciones aquí, sino que entramos directo a core/, que es quien
+    // debe quedar guardado en el ícono y quien pide la instalación allí.
+    function showInstallStep() {
+      const goToCore = () => window.location.replace("./core/");
+
+      if (isStandalone() || isIOS() || !deferredInstallPrompt) {
+        goToCore();
+        return;
+      }
+
+      const installBtn    = document.getElementById('install-btn');
+      const continueLink  = document.getElementById('continue-link');
+
+      installBtn.style.display = 'block';
+      installBtn.addEventListener('click', async () => {
+        installBtn.disabled = true;
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+        goToCore();
+      });
+
+      continueLink.style.display = 'block';
+      continueLink.addEventListener('click', goToCore);
+    }
+
     // Constantes de Supabase
     const SUPABASE_URL = "https://zgatennqbagmyfbpiakr.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpnYXRlbm5xYmFnbXlmYnBpYWtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEwMTg3NTEsImV4cCI6MjA4NjU5NDc1MX0.5c_IoL3_PM1zwFsuvblkoCoWbP9-4BSaMcIwSasLprw";
@@ -162,16 +238,14 @@
             // ✅ Activación exitosa
             saveSession(result.session_token);
             document.querySelector('h1').textContent = '¡Activado!';
-            document.querySelector('p').textContent = 'Redirigiendo a MercadoForzado...';
+            document.querySelector('p').textContent = 'Instala la app para que el acceso quede guardado en tu pantalla de inicio.';
             document.querySelector('.loader').style.display = 'none';
             document.querySelector('.icon').textContent = '✅';
-            
+
             messageEl.className = 'success';
             messageEl.textContent = 'Tu acceso ha sido activado correctamente.';
-            
-            setTimeout(() => {
-              window.location.replace("./core/");
-            }, 800);
+
+            showInstallStep();
           } else {
             // ❌ Error en la activación
             document.querySelector('.loader').style.display = 'none';
