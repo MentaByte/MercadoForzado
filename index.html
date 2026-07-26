@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Activando acceso - MercadoForzado</title>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#fff159">
+  <link rel="apple-touch-icon" href="./icon-192.png">
   <style>
     * {
       margin: 0;
@@ -141,10 +144,17 @@
     const code = params.get("k");
 
     if (!code) {
-      document.querySelector('h1').textContent = 'Acceso no válido';
-      document.querySelector('p').textContent = 'No se proporcionó un código de activación.';
-      document.querySelector('.loader').style.display = 'none';
-      document.querySelector('.icon').textContent = '⚠️';
+      // Sin código en la URL: puede ser que el ícono de pantalla de inicio
+      // haya guardado esta página (raíz) en vez de core/. Si ya hay una
+      // sesión activada previamente, entra directo a la app.
+      if (localStorage.getItem("session_token")) {
+        window.location.replace("./core/");
+      } else {
+        document.querySelector('h1').textContent = 'Acceso no válido';
+        document.querySelector('p').textContent = 'No se proporcionó un código de activación.';
+        document.querySelector('.loader').style.display = 'none';
+        document.querySelector('.icon').textContent = '⚠️';
+      }
     } else {
       activateLicense(code)
         .then(result => {
