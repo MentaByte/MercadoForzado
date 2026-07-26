@@ -24,6 +24,19 @@
     return id;
   }
 
+  async function activateLicense(code) {
+    const device_id = getDeviceId();
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/activate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ code, device_id }),
+    });
+    return res.json();
+  }
+
   async function validateSession() {
     const session_token = localStorage.getItem("session_token");
     const device_id = getDeviceId();
@@ -57,6 +70,11 @@
     }
   }
 
+  function saveSession(token) {
+    localStorage.setItem("session_token", token);
+    localStorage.setItem("last_known_status", "valid");
+  }
+
   function clearSession() {
     localStorage.removeItem("session_token");
     localStorage.removeItem("last_known_status");
@@ -66,13 +84,25 @@
     const result = await validateSession();
     if (result.valid === false && !result.no_internet) {
       clearSession();
-      window.location.replace("../");
+      if (typeof showActivationScreen === 'function') showActivationScreen(result.error);
+    } else if (result.valid === true) {
+      if (typeof hideActivationScreen === 'function') hideActivationScreen();
     }
   }
 
-  verificarAcceso();
-  setInterval(verificarAcceso, 6 * 60 * 60 * 1000);
-  window.addEventListener('online', () => verificarAcceso());
+  function iniciarVerificacion() {
+    verificarAcceso();
+    setInterval(verificarAcceso, 6 * 60 * 60 * 1000);
+    window.addEventListener('online', () => verificarAcceso());
+  }
+
+  // La pantalla de activación vive en el <body>, así que espera a que
+  // el DOM esté listo antes de la primera verificación.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', iniciarVerificacion);
+  } else {
+    iniciarVerificacion();
+  }
 </script>
 
 
@@ -404,6 +434,107 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ========================================
+       PANTALLA DE ACTIVACIÓN / REACTIVACIÓN
+       Bloquea el acceso hasta tener sesión válida
+    ======================================== */
+    .activation-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      background: linear-gradient(135deg, #fff159 0%, #ffc107 100%);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .activation-overlay.open { display: flex; }
+    .activation-card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      padding: 36px 30px;
+      max-width: 380px;
+      width: 100%;
+      text-align: center;
+    }
+    .activation-card .icon { font-size: 56px; margin-bottom: 14px; }
+    .activation-card h1 { font-size: 21px; margin-bottom: 8px; color: #333; }
+    .activation-card p { font-size: 13px; color: #666; line-height: 1.5; margin-bottom: 16px; }
+    .activation-card input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+      text-align: center;
+      letter-spacing: 1px;
+      outline: none;
+      margin-bottom: 12px;
+    }
+    .activation-card input:focus { border-color: #3483fa; }
+    .activation-card button {
+      width: 100%;
+      padding: 12px;
+      background: #3483fa;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .activation-card button:disabled { opacity: 0.6; }
+    .activation-error {
+      display: none;
+      margin-top: 12px;
+      background: #fee;
+      border: 1px solid #fcc;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 12px;
+      color: #c33;
+    }
+
+    /* ========================================
+       BANNER DE INSTALACIÓN PWA
+    ======================================== */
+    .install-banner {
+      display: none;
+      position: fixed;
+      left: 12px; right: 12px; bottom: 68px;
+      z-index: 150;
+      background: #222;
+      color: #fff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 12.5px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
+    .install-banner.open { display: flex; }
+    .install-banner span { flex: 1; line-height: 1.4; }
+    .install-banner button {
+      background: #3483fa;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .install-banner .install-dismiss {
+      background: none;
+      color: #aaa;
+      padding: 4px 6px;
+      font-size: 16px;
+      font-weight: normal;
+    }
+
+    /* ========================================
        FOOTER NAV — SVG vectoriales
     ======================================== */
     .footer {
@@ -473,6 +604,25 @@
 </head>
 
 <body>
+
+  <!-- PANTALLA DE ACTIVACIÓN / REACTIVACIÓN — bloquea el acceso sin sesión válida -->
+  <div class="activation-overlay" id="activation-overlay">
+    <div class="activation-card">
+      <div class="icon" id="activation-icon">🔒</div>
+      <h1 id="activation-title">Activa tu acceso</h1>
+      <p id="activation-msg">Ingresa el código que te enviaron para acceder a MercadoForzado.</p>
+      <input type="text" id="activation-code" placeholder="Código de acceso" autocomplete="off" autocapitalize="off">
+      <button id="activation-submit">Activar</button>
+      <div class="activation-error" id="activation-error"></div>
+    </div>
+  </div>
+
+  <!-- BANNER DE INSTALACIÓN PWA -->
+  <div class="install-banner" id="install-banner">
+    <span id="install-banner-text">📲 Instala esta app para acceder más rápido</span>
+    <button id="install-banner-btn">Instalar</button>
+    <button class="install-dismiss" id="install-banner-dismiss">✕</button>
+  </div>
 
   <!-- HEADER -->
   <header>
@@ -731,6 +881,115 @@
         });
       }).catch(err => console.log('❌ SW error:', err));
     }
+  </script>
+
+  <script>
+    /* ================================================
+       PANTALLA DE ACTIVACIÓN / REACTIVACIÓN
+       La PWA valida y reactiva el acceso por sí misma,
+       sin depender de volver a la página raíz.
+    =============================================== */
+    const activationOverlay = document.getElementById('activation-overlay');
+    const activationIcon    = document.getElementById('activation-icon');
+    const activationTitle   = document.getElementById('activation-title');
+    const activationMsg     = document.getElementById('activation-msg');
+    const activationInput   = document.getElementById('activation-code');
+    const activationSubmit  = document.getElementById('activation-submit');
+    const activationError   = document.getElementById('activation-error');
+
+    const MENSAJES_ERROR = {
+      invalid_code:    'El código no existe.',
+      revoked:         'Este acceso fue revocado.',
+      device_mismatch: 'Este código ya está activo en otro dispositivo.',
+      no_token:        'Ingresa el código que te enviaron para acceder a MercadoForzado.',
+    };
+
+    function showActivationScreen(errorCode) {
+      activationIcon.textContent  = errorCode && errorCode !== 'no_token' ? '❌' : '🔒';
+      activationTitle.textContent = errorCode && errorCode !== 'no_token' ? 'Error de acceso' : 'Activa tu acceso';
+      activationMsg.textContent   = MENSAJES_ERROR[errorCode] || 'Ingresa tu código de acceso para continuar.';
+      activationError.style.display = 'none';
+      activationOverlay.classList.add('open');
+    }
+    function hideActivationScreen() {
+      activationOverlay.classList.remove('open');
+    }
+
+    activationSubmit.addEventListener('click', async () => {
+      const code = activationInput.value.trim();
+      if (!code) return;
+      activationSubmit.disabled = true;
+      activationSubmit.textContent = 'Activando...';
+      activationError.style.display = 'none';
+      try {
+        const result = await activateLicense(code);
+        if (result.session_token) {
+          saveSession(result.session_token);
+          activationInput.value = '';
+          hideActivationScreen();
+          location.reload();
+        } else {
+          activationError.textContent = MENSAJES_ERROR[result.error] || 'No se pudo activar el acceso.';
+          activationError.style.display = 'block';
+        }
+      } catch (e) {
+        activationError.textContent = 'Error de conexión. Intenta de nuevo.';
+        activationError.style.display = 'block';
+      } finally {
+        activationSubmit.disabled = false;
+        activationSubmit.textContent = 'Activar';
+      }
+    });
+    activationInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') activationSubmit.click();
+    });
+
+    /* ================================================
+       BANNER DE INSTALACIÓN PWA
+    =============================================== */
+    function isStandaloneApp() {
+      return window.matchMedia('(display-mode: standalone)').matches ||
+             window.navigator.standalone === true;
+    }
+    function isIOSDevice() {
+      return /iphone|ipad|ipod/i.test(navigator.userAgent);
+    }
+
+    const installBanner     = document.getElementById('install-banner');
+    const installBannerBtn  = document.getElementById('install-banner-btn');
+    const installBannerText = document.getElementById('install-banner-text');
+    const installDismiss    = document.getElementById('install-banner-dismiss');
+
+    let deferredInstallPrompt = null;
+
+    if (!isStandaloneApp() && !localStorage.getItem('install_banner_dismissed')) {
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        installBanner.classList.add('open');
+      });
+
+      if (isIOSDevice()) {
+        installBannerText.textContent = '📲 Toca Compartir ⬆️ y luego "Agregar a pantalla de inicio"';
+        installBannerBtn.style.display = 'none';
+        installBanner.classList.add('open');
+      }
+    }
+
+    installBannerBtn.addEventListener('click', async () => {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      installBanner.classList.remove('open');
+    });
+    installDismiss.addEventListener('click', () => {
+      installBanner.classList.remove('open');
+      localStorage.setItem('install_banner_dismissed', '1');
+    });
+    window.addEventListener('appinstalled', () => {
+      installBanner.classList.remove('open');
+    });
   </script>
 
   <script>
